@@ -98,7 +98,7 @@ class game(env):
     def get_reward(self):
         if self.pre_action is None:
             # this is using to let module learn how to select place
-            return -1000
+            return -2000
         action = self.pre_action
 
         self_color = self.board[action[0]][action[1]]
@@ -109,7 +109,7 @@ class game(env):
                 action,
                 self_color
             )
-        reward = (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4) * 30
+        reward = (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4) * 300
 
         # other
         horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count = \
@@ -117,14 +117,14 @@ class game(env):
                 action,
                 self.A if self_color == self.B else self.B
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 50
+        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 500
 
-        for r in range(max(0, action[0] - self.win_size + 1), min(action[0] + self.win_size, self.board_size)):
-            for c in range(max(0, action[1] - self.win_size + 1), min(action[1] + self.win_size, self.board_size)):
-                if self.board[r][c] == self_color:
-                    reward += 10
-                elif self.board[r][c] != self.N:
-                    reward += 20
+        # for r in range(max(0, action[0] - self.win_size + 1), min(action[0] + self.win_size, self.board_size)):
+        #     for c in range(max(0, action[1] - self.win_size + 1), min(action[1] + self.win_size, self.board_size)):
+        #         if self.board[r][c] == self_color:
+        #             reward += 100
+        #         elif self.board[r][c] != self.N:
+        #             reward += 200
 
         return reward
 
@@ -149,10 +149,12 @@ class game(env):
         self.count = self.board_size * self.board_size
 
     def display(self):
+        disp = ".OX"
         for i in range(self.board_size):
             for j in range(self.board_size):
-                print(".OX"[self.board[i][j]], end=" ")
+                print(disp[self.board[i][j]], end=" ")
             print()
+        print(f"{disp[self.A]}:A, {disp[self.B]}:B")
 
 
 if __name__ == '__main__':

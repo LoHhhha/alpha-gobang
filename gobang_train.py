@@ -3,16 +3,49 @@ import time
 import agent
 import environment
 
-TRAIN_TIME = 1000
-BOARD_SIZE = 8
-WIN_SIZE = 5
-MAX_FAIL_TIME = 10
+TRAIN_TIME = 3000
+BOARD_SIZE = 5
+WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
+LEARNING_RATE = 0.01
+
+
+def robot_step(who, robot, env, memorize_to_robot=None, is_train=True):
+    state = env.get_state(who)
+    action = robot.get_action(state)
+
+    place_hash = torch.argmax(action).item()
+    r, c = place_hash // BOARD_SIZE, place_hash % BOARD_SIZE
+    env.step(who, (r, c))
+
+    done = env.check()
+    reward = env.get_reward()
+    next_state = env.get_state(who)
+
+    action = action.cpu().detach().numpy()
+    if is_train:
+        robot.memorize(state, action, reward, next_state, done)
+        robot.train_action(state, action, reward, next_state, done)
+    elif memorize_to_robot:
+        memorize_to_robot.memorize(state, action, reward, next_state, done)
+    return done
 
 
 def train():
-    robot = agent.gobang.robot(device=torch.device('cuda'), epsilon=0.5, board_size=BOARD_SIZE)
-    robot_best = agent.gobang.robot(device=torch.device('cuda'), epsilon=0.9, board_size=BOARD_SIZE)
+    robot = agent.gobang.robot(
+        device=torch.device('cpu'),
+        epsilon=0.4,
+        epsilon_decay=1,
+        board_size=BOARD_SIZE,
+        lr=LEARNING_RATE
+    )
+    robot_best = agent.gobang.robot(
+        device=torch.device('cpu'),
+        epsilon=0.2,
+        epsilon_decay=0.99,
+        board_size=BOARD_SIZE,
+        lr=LEARNING_RATE
+    )
 
     robot.save(MODULE_SAVE_PATH)
 
@@ -24,57 +57,14 @@ def train():
         env.clear()
         while True:
             # player1(train)
-            fail_cnt = 0
-            while True:
-                state = env.get_state(1)
-                train_action = robot.get_action(state, need_random=fail_cnt >= MAX_FAIL_TIME)
-
-                place_hash = torch.argmax(train_action).item()
-                r, c = place_hash // BOARD_SIZE, place_hash % BOARD_SIZE
-                env.step(env.A, (r, c))
-
-                done = env.check()
-                reward = env.get_reward()
-                next_state = env.get_state(env.A)
-
-                train_action = train_action.cpu().detach().numpy()
-
-                robot.memorize(state, train_action, reward, next_state, done)
-                robot.train_action(state, train_action, reward, next_state, done)
-
-                if env.pre_action is not None:
-                    break
-
-                fail_cnt += 1
+            done = robot_step(env.A, robot, env, robot, True)
 
             if done != 0:
                 who_win = done
                 break
 
             # player2(best)
-            fail_cnt = 0
-            while True:
-                state = env.get_state(-1)
-                best_action = robot_best.get_action(state, need_random=fail_cnt >= MAX_FAIL_TIME)
-
-                place_hash = torch.argmax(best_action).item()
-                r, c = place_hash // BOARD_SIZE, place_hash % BOARD_SIZE
-                env.step(env.B, (r, c))
-
-                done = env.check()
-                reward = env.get_reward()
-                next_state = env.get_state(env.B)
-
-                robot_best.memorize(state, train_action, reward, next_state, done)
-                robot_best.train_action(state, train_action, reward, next_state, done)
-
-                if reward > 0:
-                    robot_best.memorize(state, train_action, reward, next_state, done)
-
-                if env.pre_action is not None:
-                    break
-
-                fail_cnt += 1
+            done = robot_step(env.B, robot_best, env, robot, False)
 
             if done != 0:
                 who_win = done
@@ -92,43 +82,28 @@ def train():
         if who_win == env.draw_play:
             print(f"draw after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
             continue
-        if who_win == 1:
+        if who_win == env.A:
             print(f"Player1 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
             robot.save(MODULE_SAVE_PATH)
-        if who_win == -1:
+            robot_best.change_module(MODULE_SAVE_PATH)
+        if who_win == env.B:
             print(f"Player2 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
-            robot_best.save(MODULE_SAVE_PATH)
 
-        robot.change_module(MODULE_SAVE_PATH)
-        robot_best.change_module(MODULE_SAVE_PATH)
         robot.reduce_epsilon()
         robot_best.reduce_epsilon()
 
 
 def play():
-    robot = agent.gobang.robot(device=torch.device('cuda'), epsilon=0, board_size=BOARD_SIZE,
+    robot = agent.gobang.robot(device=torch.device('cpu'), epsilon=0, board_size=BOARD_SIZE,
                                module_save_path=MODULE_SAVE_PATH)
 
     env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
     with torch.no_grad():
         while True:
-            need_random = False
-            while True:
-                if need_random:
-                    print("[note] random chose!")
+            done = robot_step(env.A, robot, env, is_train=False)
 
-                state = env.get_state(env.A)
-                best_action = robot.get_action(state, need_random)
-
-                place_hash = torch.argmax(best_action).item()
-                r, c = place_hash // BOARD_SIZE, place_hash % BOARD_SIZE
-                env.step(env.A, (r, c))
-                print((r, c), place_hash)
-
-                need_random = True
-
-                if env.pre_action is not None:
-                    break
+            if done != 0:
+                break
 
             env.display()
 
@@ -151,3 +126,4 @@ def play():
 
 if __name__ == '__main__':
     train()
+    play()

@@ -2,9 +2,12 @@ import torch
 
 
 class DQN:
-    def __init__(self):
-        self.gamma = 0.9
-        self.learning_rate = 0.01
+    def __init__(self,
+                 gamma=0.9,
+                 learning_rate=0.01
+                 ):
+        self.gamma = gamma
+        self.learning_rate = learning_rate
         self.loss = torch.nn.MSELoss
 
         self.device = None

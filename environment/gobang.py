@@ -18,7 +18,7 @@ class game(env):
         self.draw_play = 19528  # 0x4c48 :)
 
     def get_neighbor_info(self, place: Tuple[int, int], agent: int):
-        horizontal_count = self.board[place[0]][place[1]] == agent
+        horizontal_count = 1
         for c in range(place[1] - 1, max(place[1] - self.win_size, -1), -1):
             if self.board[place[0]][c] != agent:
                 break
@@ -31,7 +31,7 @@ class game(env):
             else:
                 horizontal_count += 1
 
-        vertical_count = self.board[place[0]][place[1]] == agent
+        vertical_count = 1
         for r in range(place[0] - 1, max(place[0] - self.win_size, -1), -1):
             if self.board[r][place[1]] != agent:
                 break
@@ -43,7 +43,7 @@ class game(env):
             else:
                 vertical_count += 1
 
-        diagonal_count = self.board[place[0]][place[1]] == agent
+        diagonal_count = 1
         for d in range(1, min(min(place[0], place[1]) + 1, self.win_size)):
             if self.board[place[0] - d][place[1] - d] != agent:
                 break
@@ -56,7 +56,7 @@ class game(env):
             else:
                 diagonal_count += 1
 
-        reverse_diagonal_count = self.board[place[0]][place[1]] == agent
+        reverse_diagonal_count = 1
         for d in range(1, min(min(place[0] + 1, self.board_size - place[1]), self.win_size)):
             if self.board[place[0] - d][place[1] + d] != agent:
                 break
@@ -98,7 +98,7 @@ class game(env):
     def get_reward(self):
         if self.pre_action is None:
             # this is using to let module learn how to select place
-            return -2000
+            return -25600
         action = self.pre_action
 
         self_color = self.board[action[0]][action[1]]
@@ -111,13 +111,16 @@ class game(env):
             )
         reward = (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4) * 300
 
+        if max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count) >= 5:
+            return 25600
+
         # other
         horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count = \
             self.get_neighbor_info(
                 action,
                 self.A if self_color == self.B else self.B
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 500
+        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 350
 
         # for r in range(max(0, action[0] - self.win_size + 1), min(action[0] + self.win_size, self.board_size)):
         #     for c in range(max(0, action[1] - self.win_size + 1), min(action[1] + self.win_size, self.board_size)):

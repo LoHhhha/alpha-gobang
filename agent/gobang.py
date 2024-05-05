@@ -1,3 +1,4 @@
+import math
 from collections import deque
 import random
 from agent.module.gobang import test_demo
@@ -36,11 +37,15 @@ class robot(DQN):
         self.epsilon_decay = epsilon_decay
         self.board_size = board_size
 
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.loss = torch.nn.SmoothL1Loss()
 
     def change_module(self, module_save_path: str):
         self.module = torch.load(module_save_path)
         self.module = self.module.to(self.device)
+
+    def change_module_from_other(self, other):
+        state = other.module.state_dict()
+        self.module.load_state_dict(state)
 
     def reduce_epsilon(self):
         self.epsilon = self.epsilon * self.epsilon_decay
@@ -105,8 +110,8 @@ class robot(DQN):
         for idx in range(len(done)):
             Q_new = d_reward[idx]
             if done[idx] == 0:
-                Q_new += self.gamma * torch.max(self.module(d_next_state[idx]))
-
+                next_pre = self.module(d_next_state[idx])
+                Q_new += self.gamma * torch.max(next_pre)
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
         # change target
@@ -114,8 +119,7 @@ class robot(DQN):
             for j in range(len(state[i])):
                 # cannot place
                 if state[i][j] != 0:
-                    target[i][j] = 0
-        target = torch.nn.Softmax()(target.to(self.device))
+                    target[i][j] = -25600
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)
@@ -133,6 +137,8 @@ class robot(DQN):
 
         states, actions, rewards, next_states, dones = zip(*sample)
         self.train(states, actions, rewards, next_states, dones)
+
+
 
     def save(self, path: str):
         torch.save(self.module, path)

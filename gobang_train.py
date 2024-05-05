@@ -3,11 +3,11 @@ import time
 import agent
 import environment
 
-TRAIN_TIME = 3000
-BOARD_SIZE = 5
+TRAIN_TIME = 10000
+BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 
 
 def robot_step(who, robot, env, memorize_to_robot=None, is_train=True):
@@ -34,15 +34,15 @@ def robot_step(who, robot, env, memorize_to_robot=None, is_train=True):
 def train():
     robot = agent.gobang.robot(
         device=torch.device('cpu'),
-        epsilon=0.4,
+        epsilon=0,
         epsilon_decay=1,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
     )
     robot_best = agent.gobang.robot(
         device=torch.device('cpu'),
-        epsilon=0.2,
-        epsilon_decay=0.99,
+        epsilon=0.8,
+        epsilon_decay=1,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
     )
@@ -84,13 +84,14 @@ def train():
             continue
         if who_win == env.A:
             print(f"Player1 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
-            robot.save(MODULE_SAVE_PATH)
-            robot_best.change_module(MODULE_SAVE_PATH)
+            robot_best.change_module_from_other(robot)
         if who_win == env.B:
             print(f"Player2 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
 
         robot.reduce_epsilon()
         robot_best.reduce_epsilon()
+
+    robot.save(MODULE_SAVE_PATH)
 
 
 def play():

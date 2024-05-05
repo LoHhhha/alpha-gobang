@@ -1,3 +1,6 @@
+import math
+
+import torch
 from torch import nn
 
 
@@ -5,12 +8,13 @@ class test_demo(nn.Module):
     def __init__(self, state_size, board_size):
         super().__init__()
         self.nn = nn.Sequential(
-            nn.Linear(state_size, state_size * 2),
-            nn.Softmax(),
-            nn.Linear(state_size * 2, state_size),
-            nn.Tanh(),
+            nn.Linear(state_size, state_size),
+            nn.Linear(state_size, state_size * 4),
+            nn.PReLU(),
+            nn.Linear(state_size * 4, state_size),
+            nn.Softplus(),
             nn.Linear(state_size, board_size * board_size),
-            nn.Softmax(),
+            nn.PReLU(),
             nn.Linear(board_size * board_size, board_size * board_size),
             nn.PReLU(),
         )

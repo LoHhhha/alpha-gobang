@@ -68,11 +68,13 @@ class robot(DQN):
     def get_action(self, state, need_random=False):
         # update:
         # let robot always make a logical action.
+        # base action will not affect train, so let the place chosen be 1.
         if random.random() < self.epsilon or need_random:
             # random chosen
             action = self.random_action(state)
         else:
             action = self.module(torch.tensor(state, device=self.device, dtype=torch.float).unsqueeze(0))[0].detach()
+            # print(action)
             best_place = -1
             best_score = float('-inf')
             for i in range(len(state)):
@@ -111,15 +113,16 @@ class robot(DQN):
             Q_new = d_reward[idx]
             if done[idx] == 0:
                 next_pre = self.module(d_next_state[idx])
-                Q_new += self.gamma * torch.max(next_pre)
+                # do not let other get the best
+                Q_new -= self.gamma * torch.max(next_pre)
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
-        # change target
-        for i in range(len(done)):
-            for j in range(len(state[i])):
-                # cannot place
-                if state[i][j] != 0:
-                    target[i][j] = -25600
+        # # change target
+        # for i in range(len(done)):
+        #     for j in range(len(state[i])):
+        #         # cannot place
+        #         if state[i][j] != 0:
+        #             target[i][j] = 0
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)
@@ -137,8 +140,6 @@ class robot(DQN):
 
         states, actions, rewards, next_states, dones = zip(*sample)
         self.train(states, actions, rewards, next_states, dones)
-
-
 
     def save(self, path: str):
         torch.save(self.module, path)

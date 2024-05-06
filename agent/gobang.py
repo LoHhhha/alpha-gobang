@@ -1,7 +1,7 @@
 import math
 from collections import deque
 import random
-from agent.module.gobang import test_demo
+from agent.module.gobang import hNet_RL_v1 as Net
 from agent.dqn_trainer import DQN
 
 import torch.nn
@@ -22,7 +22,7 @@ class robot(DQN):
         super().__init__(learning_rate=lr)
 
         if module_save_path is None:
-            self.module = test_demo(state_size=board_size * board_size, board_size=board_size)
+            self.module = Net(board_size=board_size)
 
         else:
             self.module = torch.load(module_save_path)
@@ -112,17 +112,17 @@ class robot(DQN):
         for idx in range(len(done)):
             Q_new = d_reward[idx]
             if done[idx] == 0:
-                next_pre = self.module(d_next_state[idx])
+                next_pre = self.module(d_next_state[idx].unsqueeze(0))
                 # do not let other get the best
                 Q_new -= self.gamma * torch.max(next_pre)
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
-        # # change target
-        # for i in range(len(done)):
-        #     for j in range(len(state[i])):
-        #         # cannot place
-        #         if state[i][j] != 0:
-        #             target[i][j] = 0
+        # change target
+        for i in range(len(done)):
+            for j in range(len(state[i])):
+                # cannot place
+                if state[i][j] != 0:
+                    target[i][j] = -2560
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)

@@ -8,6 +8,8 @@ BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
 LEARNING_RATE = 0.001
+SHOW_BOARD_TIME = 10
+DEVICE = torch.device("cpu")
 
 
 def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, show_result: bool = False):
@@ -39,14 +41,14 @@ def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, s
 
 def train():
     robot = agent.gobang.robot(
-        device=torch.device('cpu'),
+        device=DEVICE,
         epsilon=0.8,
         epsilon_decay=0.95,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
     )
     robot_best = agent.gobang.robot(
-        device=torch.device('cpu'),
+        device=DEVICE,
         epsilon=0.3,
         epsilon_decay=1,
         board_size=BOARD_SIZE,
@@ -62,6 +64,10 @@ def train():
         start_time = time.time()
         env.clear()
         while True:
+            if epoch % SHOW_BOARD_TIME == 0:
+                print("A:", robot.module(
+                    torch.tensor(env.get_state(env.A)).float().unsqueeze(0).to(DEVICE)).cpu().detach().numpy())
+
             # player1(train)
             done = robot_step(env.A, robot, env, memorize_to_robot=robot, is_train=True)
 
@@ -70,6 +76,10 @@ def train():
                 break
 
             # player2(best)
+            if epoch % SHOW_BOARD_TIME == 0:
+                print("B:", robot.module(
+                    torch.tensor(env.get_state(env.B)).float().unsqueeze(0).to(DEVICE)).cpu().detach().numpy())
+
             done = robot_step(env.B, robot_best, env, memorize_to_robot=robot, is_train=False)
 
             if done != 0:
@@ -82,7 +92,7 @@ def train():
         avg_time = 0.5 * (avg_time + diff_time)
         print(f"Epoch {epoch + 1}/{TRAIN_TIME}, {diff_time:.3f}it/s, {avg_time * (TRAIN_TIME - epoch - 1):.0f}s left:")
 
-        if epoch % 10 == 0:
+        if epoch % SHOW_BOARD_TIME == 0:
             env.display()
 
         if who_win == env.draw_play:
@@ -92,12 +102,14 @@ def train():
             print(f"Player1 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
             robot_best.change_module_from_other(robot)
         if who_win == env.B:
+            if epoch % SHOW_BOARD_TIME:
+                env.display()
             print(f"Player2 win after {BOARD_SIZE * BOARD_SIZE - env.count} step.\n")
 
         robot.reduce_epsilon()
         robot_best.reduce_epsilon()
 
-        robot.save(MODULE_SAVE_PATH)
+    robot.save(MODULE_SAVE_PATH)
 
 
 def play():

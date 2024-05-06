@@ -10,9 +10,14 @@ BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
 MODULE_UE_SAVE_PATH = "best_gobang.pth"
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 SHOW_BOARD_TIME = 10
-DEVICE = torch.device("cpu")
+DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
+
+ROBOT_A_EPSILON = 0.8
+ROBOT_A_EPSILON_DECAY = 0.99
+ROBOT_B_EPSILON = 0.3
+ROBOT_B_EPSILON_DECAY = 1
 
 
 def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, show_result: bool = False):
@@ -45,15 +50,15 @@ def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, s
 def train():
     robot = agent.gobang.robot(
         device=DEVICE,
-        epsilon=0.8,
-        epsilon_decay=0.95,
+        epsilon=ROBOT_A_EPSILON,
+        epsilon_decay=ROBOT_A_EPSILON_DECAY,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
     )
     robot_best = agent.gobang.robot(
         device=DEVICE,
-        epsilon=0.3,
-        epsilon_decay=1,
+        epsilon=ROBOT_B_EPSILON,
+        epsilon_decay=ROBOT_B_EPSILON_DECAY,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
     )
@@ -154,5 +159,5 @@ def play():
 
 
 if __name__ == '__main__':
-    # train()
+    train()
     play()

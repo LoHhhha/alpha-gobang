@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from typing import Tuple
 from environment.env import env
@@ -112,7 +114,8 @@ class game(env):
                 action,
                 self.N
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4) * 10
+        reward += math.pow(math.e,
+                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 10
 
         # self
         # guide to attack
@@ -121,7 +124,8 @@ class game(env):
                 action,
                 self_color
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4) * 50
+        reward += math.pow(math.e,
+                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 50
 
         if max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count) >= self.win_size:
             return 2560
@@ -133,7 +137,8 @@ class game(env):
                 action,
                 self.A if self_color == self.B else self.B
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 100
+        reward += math.pow(math.e,
+                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 100
 
         return reward
 

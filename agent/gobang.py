@@ -1,6 +1,9 @@
 import math
 from collections import deque
 import random
+
+import numpy as np
+
 from agent.module.gobang import hNet_RL_v1 as Net
 from agent.dqn_trainer import DQN
 
@@ -87,10 +90,10 @@ class robot(DQN):
         return action
 
     def train(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype=torch.float)
-        next_state = torch.tensor(next_state, dtype=torch.float)
-        action = torch.tensor(action, dtype=torch.float)
-        reward = torch.tensor(reward, dtype=torch.float)
+        state = torch.tensor(np.array(state), dtype=torch.float)
+        next_state = torch.tensor(np.array(next_state), dtype=torch.float)
+        action = torch.tensor(np.array(action), dtype=torch.float)
+        reward = torch.tensor(np.array(reward), dtype=torch.float)
 
         if len(state.shape) == 1:
             state = torch.unsqueeze(state, 0)

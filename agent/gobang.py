@@ -1,16 +1,15 @@
 import math
 from collections import deque
 import random
-
+import torch.nn
 import numpy as np
-
-from agent.module.gobang import hNet_RL_v1 as Net
 from agent.dqn_trainer import DQN
 
-import torch.nn
+# if you want to change net, plz just "... as Net"
+from agent.module.hNet_RL_v1 import hNet_RL_v1 as Net
 
 MAX_MEMORY = 10240
-BATCH_SIZE = 512
+BATCH_SIZE = 1024
 
 
 class robot(DQN):

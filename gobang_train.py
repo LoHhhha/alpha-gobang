@@ -9,7 +9,7 @@ TRAIN_TIME = 20000
 BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
-MODULE_UE_SAVE_PATH = "./best_gobang_ue.pth"
+MODULE_UE_SAVE_PATH = "best_gobang.pth"
 LEARNING_RATE = 0.001
 SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")
@@ -52,7 +52,7 @@ def train():
     )
     robot_best = agent.gobang.robot(
         device=DEVICE,
-        epsilon=0.1,
+        epsilon=0.3,
         epsilon_decay=1,
         board_size=BOARD_SIZE,
         lr=LEARNING_RATE
@@ -61,7 +61,7 @@ def train():
     @atexit.register
     def when_unexpect_exit():
         if robot:
-            torch.save(robot, MODULE_UE_SAVE_PATH)
+            torch.save(robot.module, MODULE_UE_SAVE_PATH)
             print("[note] because unexpected exit, we save current net as '{}'.".format(MODULE_UE_SAVE_PATH))
 
     robot.save(MODULE_SAVE_PATH)
@@ -154,5 +154,5 @@ def play():
 
 
 if __name__ == '__main__':
-    train()
+    # train()
     play()

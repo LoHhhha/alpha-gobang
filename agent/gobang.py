@@ -23,9 +23,9 @@ class robot(DQN):
 
         if module_save_path is None:
             self.module = Net(board_size=board_size)
-
         else:
             self.module = torch.load(module_save_path)
+
         self.module = self.module.to(device)
 
         self.optimizer = self.optimizer(lr=self.learning_rate, params=self.module.parameters())

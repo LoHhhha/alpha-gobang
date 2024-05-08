@@ -38,3 +38,16 @@ python gobang_train.py
   * `A`预期是在前期多随机学习更多的行为,后期主要靠自身参数引导
   * `B`预期是在训练的全阶段都存在一定概率的随机,使得训练中持续存在更多的行为
   * 最终的训练状态是不断根据现有参数调优，完成对解的拟合。
+
+### 多线程版本`gobang_train_multithread`
+
+1. 多战局同时启动
+2. 得到所有战局中的行为
+3. 训练整体模型
+4. 回到`1`
+
+#### 注意
+
+* 新建线程的数目由`len(EPSILON_LIST)`给出
+* `EPSILON_LIST`包含若干个元组，元组内元素为：`(ROBOT_A_EPSILON, ROBOT_A_EPSILON_DECAY, ROBOT_B_EPSILON, ROBOT_B_EPSILON_DECAY)`
+* `EPSILON_LIST`应该尽可能多的考虑情况，给出不一样的随机策略

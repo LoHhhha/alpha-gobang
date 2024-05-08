@@ -9,7 +9,7 @@ TRAIN_TIME = 20000
 BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang.pth"
-MODULE_UE_SAVE_PATH = "best_gobang.pth"
+MODULE_UE_SAVE_PATH = "best_gobang_ue.pth"
 LEARNING_RATE = 0.0001
 SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
@@ -40,7 +40,6 @@ def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, s
 
     if memorize_to_robot is not None:
         memorize_to_robot.memorize(state, action, reward, next_state, done)
-        memorize_to_robot.train_action(state, action, reward, next_state, done)
     if is_train:
         robot.train_action(state, action, reward, next_state, done)
 

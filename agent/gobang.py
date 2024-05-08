@@ -19,7 +19,9 @@ class robot(DQN):
                  epsilon=0.4,
                  epsilon_decay=0.99,
                  board_size=15,
-                 lr=0.01
+                 lr=0.01,
+                 max_memory_size=MAX_MEMORY,
+                 batch_size=BATCH_SIZE,
                  ):
         super().__init__(learning_rate=lr)
 
@@ -34,10 +36,13 @@ class robot(DQN):
         self.loss = self.loss()
 
         self.device = device
-        self.memory = deque(maxlen=MAX_MEMORY)
+        self.memory = deque(maxlen=max_memory_size)
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.board_size = board_size
+
+        self.max_memory_size = max_memory_size
+        self.batch_size = batch_size
 
         self.loss = torch.nn.SmoothL1Loss()
 
@@ -135,8 +140,8 @@ class robot(DQN):
         self.train(state, action, reward, next_state, done)
 
     def train_memory(self):
-        if len(self.memory) > BATCH_SIZE:
-            sample = random.sample(self.memory, BATCH_SIZE)
+        if len(self.memory) > self.batch_size:
+            sample = random.sample(self.memory, self.batch_size)
         else:
             sample = self.memory
 

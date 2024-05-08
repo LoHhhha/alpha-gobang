@@ -71,5 +71,5 @@ def play_with_dm(board_size: int, win_size: int):
 
 
 if __name__ == '__main__':
-    # play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
+    play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
     play_with_dm(BOARD_SIZE, WIN_SIZE)

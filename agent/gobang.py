@@ -1,3 +1,4 @@
+import itertools
 import math
 from collections import deque
 import random
@@ -129,7 +130,7 @@ class robot(DQN):
             for j in range(len(state[i])):
                 # cannot place
                 if state[i][j] != 0:
-                    target[i][j] = -2560
+                    target[i][j] = 0
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)
@@ -140,13 +141,15 @@ class robot(DQN):
         self.train(state, action, reward, next_state, done)
 
     def train_memory(self):
-        if len(self.memory) > self.batch_size:
-            sample = random.sample(self.memory, self.batch_size)
-        else:
-            sample = self.memory
+        if len(self.memory) < self.batch_size:
+            states, actions, rewards, next_states, dones = zip(*self.memory)
+            self.train(states, actions, rewards, next_states, dones)
+            return
 
-        states, actions, rewards, next_states, dones = zip(*sample)
-        self.train(states, actions, rewards, next_states, dones)
+        for i in range(0, len(self.memory), self.batch_size):
+            sample = itertools.islice(self.memory, i,min(len(self.memory), i + self.batch_size))
+            states, actions, rewards, next_states, dones = zip(*sample)
+            self.train(states, actions, rewards, next_states, dones)
 
     def save(self, path: str):
         torch.save(self.module, path)

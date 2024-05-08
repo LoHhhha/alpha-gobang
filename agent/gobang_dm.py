@@ -21,7 +21,11 @@ class dm_robot():
             for j in range(0, self.board_size):
 
                 if self.env.board[i][j] == self.env.N:
-                    reward = self.env.get_reward((i, j), self.color)
+                    # temp to let board[i][j] to be self.color
+                    self.env.board[i][j] = self.color
+                    reward = self.env.get_reward((i, j))
+                    self.env.board[i][j] = self.env.N
+
                     if reward > best_score:
                         best_score = reward
                         qu = queue.Queue()

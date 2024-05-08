@@ -97,7 +97,7 @@ class game(env):
             return self.draw_play
         return done
 
-    def get_reward(self, action: Tuple[int, int] | None = None, color=None) -> float:
+    def get_reward(self, action: Tuple[int, int] | None = None) -> float:
         if self.pre_action is None and action is None:
             # this is using to let module learn how to select place
             return -25600
@@ -105,10 +105,7 @@ class game(env):
         if action is None:
             action = self.pre_action
 
-        if color is not None:
-            self_color = color
-        else:
-            self_color = self.board[action[0]][action[1]]
+        self_color = self.board[action[0]][action[1]]
 
         reward = 0
 

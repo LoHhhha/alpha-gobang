@@ -8,7 +8,7 @@ import torch
 import agent
 import environment
 
-TRAIN_TIME = 20000
+TRAIN_TIME = 500
 BOARD_SIZE = 3
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang_multi.pth"
@@ -16,8 +16,8 @@ MODULE_UE_SAVE_PATH = "./best_gobang_multi_ue.pth"
 LEARNING_RATE = 0.0001
 SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
-MAX_MEMORY_SIZE = 10240
-BATCH_SIZE = 2560
+MAX_MEMORY_SIZE = 51200
+BATCH_SIZE = 10240
 
 # THREAD_NUM base on EPSILON_LIST
 # each tuple in EPSILON_LIST is (ROBOT_A_EPSILON, ROBOT_A_EPSILON_DECAY, ROBOT_B_EPSILON, ROBOT_B_EPSILON_DECAY)
@@ -35,11 +35,17 @@ EPSILON_LIST = [
     (0.8, 0.99, 0.9, 1),
     (0.8, 0.99, 1, 1),
     (0.8, 0.99, 1, 1),
-    (0.8, 0.99, 1, 1),
-    (0.8, 0.99, 1, 1),
-    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, -1, 1),
     (0.8, 0.99, -1, 1),
     (-1, 1, 0.8, 0.99),
+    (-1, 1, 0.8, 0.99),
+    (-1, 1, -1, 1),
+    (-1, 1, -1, 1),
+    (1, 1, -1, 1),
+    (1, 1, -1, 1),
+    (-1, 1, 1, 1),
+    (-1, 1, 1, 1),
+    (1, 1, 1, 1),
     (1, 1, 1, 1)
 ]
 

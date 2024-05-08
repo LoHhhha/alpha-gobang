@@ -126,37 +126,5 @@ def train():
     atexit.unregister(when_unexpect_exit)
 
 
-def play():
-    robot = agent.gobang.robot(device=torch.device('cpu'), epsilon=0, board_size=BOARD_SIZE,
-                               module_save_path=MODULE_SAVE_PATH)
-
-    env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
-    with torch.no_grad():
-        while True:
-            done = robot_step(env.A, robot, env, is_train=False, show_result=True)
-
-            if done != 0:
-                break
-
-            env.display()
-
-            while True:
-                a = int(input("r->"))
-                b = int(input("c->"))
-                if env.board[a][b] != 0:
-                    continue
-
-                env.step(env.B, (a, b))
-
-                if env.pre_action is not None:
-                    break
-
-            if env.check() != 0:
-                break
-
-        env.display()
-
-
 if __name__ == '__main__':
     train()
-    play()

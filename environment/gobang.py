@@ -97,13 +97,18 @@ class game(env):
             return self.draw_play
         return done
 
-    def get_reward(self):
-        if self.pre_action is None:
+    def get_reward(self, action: Tuple[int, int] | None = None, color=None) -> float:
+        if self.pre_action is None and action is None:
             # this is using to let module learn how to select place
-            return -2560
-        action = self.pre_action
+            return -25600
 
-        self_color = self.board[action[0]][action[1]]
+        if action is None:
+            action = self.pre_action
+
+        if color is not None:
+            self_color = color
+        else:
+            self_color = self.board[action[0]][action[1]]
 
         reward = 0
 
@@ -114,8 +119,7 @@ class game(env):
                 action,
                 self.N
             )
-        reward += math.pow(math.e,
-                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 10
+        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 10
 
         # self
         # guide to attack
@@ -124,11 +128,10 @@ class game(env):
                 action,
                 self_color
             )
-        reward += math.pow(math.e,
-                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 50
+        reward += math.pow(math.e, max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count)) * 10
 
         if max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count) >= self.win_size:
-            return 2560
+            return math.pow(math.e, self.win_size * 2) * 100
 
         # other
         # guide to defend
@@ -137,8 +140,7 @@ class game(env):
                 action,
                 self.A if self_color == self.B else self.B
             )
-        reward += math.pow(math.e,
-                           (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count - 4)) * 100
+        reward += math.pow(math.e, max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count)) * 50
 
         return reward
 

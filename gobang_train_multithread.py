@@ -21,17 +21,26 @@ BATCH_SIZE = 2560
 
 # THREAD_NUM base on EPSILON_LIST
 # each tuple in EPSILON_LIST is (ROBOT_A_EPSILON, ROBOT_A_EPSILON_DECAY, ROBOT_B_EPSILON, ROBOT_B_EPSILON_DECAY)
+# when ROBOT_A_EPSILON==-1 means use gobang_dm
 EPSILON_LIST = [
+    (0.8, 0.99, 0, 1),
+    (0.8, 0.99, 0.1, 1),
+    (0.8, 0.99, 0.2, 1),
     (0.8, 0.99, 0.3, 1),
     (0.8, 0.99, 0.4, 1),
     (0.8, 0.99, 0.5, 1),
     (0.8, 0.99, 0.6, 1),
     (0.8, 0.99, 0.7, 1),
     (0.8, 0.99, 0.8, 1),
-    (0.8, 0.99, 0.5, 0.99),
-    (0.8, 0.99, 0.5, 0.99),
-    (0.8, 0.99, 0.7, 0.99),
-    (0.8, 0.99, 0.7, 0.99),
+    (0.8, 0.99, 0.9, 1),
+    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, 1, 1),
+    (0.8, 0.99, -1, 1),
+    (-1, 1, 0.8, 0.99),
+    (1, 1, 1, 1)
 ]
 
 # epsilon and epsilon_decay are meaningless for the next robot
@@ -55,32 +64,42 @@ game_info = queue.Queue()
 
 
 def train(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode: float, robot_b_episode_decay: float):
+    env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
+
     # board_size and lr are meaningless for the next two rebot.
     # set max_memory_size=0 is avoiding to train at these two robots.
-    robot_A = agent.gobang.robot(
-        device=DEVICE,
-        epsilon=robot_a_episode,
-        epsilon_decay=robot_a_episode_decay,
-        board_size=BOARD_SIZE,
-        lr=LEARNING_RATE,
-        max_memory_size=0
-    )
-    robot_B = agent.gobang.robot(
-        device=DEVICE,
-        epsilon=robot_b_episode,
-        epsilon_decay=robot_b_episode_decay,
-        board_size=BOARD_SIZE,
-        lr=LEARNING_RATE,
-        max_memory_size=0
-    )
+    if robot_a_episode != -1:
+        robot_A = agent.gobang.robot(
+            device=DEVICE,
+            epsilon=robot_a_episode,
+            epsilon_decay=robot_a_episode_decay,
+            board_size=BOARD_SIZE,
+            lr=LEARNING_RATE,
+            max_memory_size=0
+        )
+    else:
+        robot_A = agent.gobang_dm.dm_robot(env=env, color=env.A)
 
-    env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
+    if robot_b_episode != -1:
+        robot_B = agent.gobang.robot(
+            device=DEVICE,
+            epsilon=robot_b_episode,
+            epsilon_decay=robot_b_episode_decay,
+            board_size=BOARD_SIZE,
+            lr=LEARNING_RATE,
+            max_memory_size=0
+        )
+    else:
+        robot_B = agent.gobang_dm.dm_robot(env=env, color=env.B)
+
     for epoch in range(TRAIN_TIME):
         start_next_game.acquire(blocking=True)
 
         # get module from tol_robot
-        robot_A.change_module_from_other(tol_robot)
-        robot_B.change_module_from_other(tol_robot)
+        if robot_a_episode != -1:
+            robot_A.change_module_from_other(tol_robot)
+        if robot_b_episode != -1:
+            robot_B.change_module_from_other(tol_robot)
 
         env.clear()
         cnt = 0
@@ -97,7 +116,10 @@ def train(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode:
                 who_win = done
                 break
 
-        game_info.put((cnt, who_win))
+        # game_info.put((cnt, who_win))
+
+        robot_A.reduce_epsilon()
+        robot_B.reduce_epsilon()
 
         game_over_count.release(1)
 

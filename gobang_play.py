@@ -4,7 +4,7 @@ import agent
 import environment
 from gobang_train import robot_step
 
-BOARD_SIZE = 3
+BOARD_SIZE = 5
 WIN_SIZE = 3
 MODULE_SAVE_PATH = "./best_gobang_multi_ue.pth"
 
@@ -16,7 +16,7 @@ def play(board_size: int, win_size: int, module_path: str):
     env = environment.gobang.game(board_size=board_size, win_size=win_size)
     with torch.no_grad():
         while True:
-            done = robot_step(env.A, robot, env, is_train=False, show_result=True)
+            done = robot_step(env.A, robot, env, is_train=False, show_result=True, board_size=BOARD_SIZE)
 
             if done != 0:
                 break
@@ -46,7 +46,7 @@ def play_with_dm(board_size: int, win_size: int):
 
     with torch.no_grad():
         while True:
-            done = robot_step(env.A, robot, env, is_train=False, show_result=True)
+            done = robot_step(env.A, robot, env, is_train=False, show_result=True, board_size=BOARD_SIZE)
 
             if done != 0:
                 break
@@ -71,5 +71,5 @@ def play_with_dm(board_size: int, win_size: int):
 
 
 if __name__ == '__main__':
-    play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
+    # play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
     play_with_dm(BOARD_SIZE, WIN_SIZE)

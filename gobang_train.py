@@ -20,14 +20,19 @@ ROBOT_B_EPSILON = 0.3
 ROBOT_B_EPSILON_DECAY = 1
 
 
-def robot_step(who, robot, env, memorize_to_robot=None, is_train: bool = True, show_result: bool = False):
+def robot_step(
+        who, robot, env,
+        memorize_to_robot=None,
+        is_train: bool = True,
+        show_result: bool = False,
+        board_size: int = BOARD_SIZE):
     state = env.get_state(who)
     action = robot.get_action(state)
 
     place_hash = torch.argmax(action).item()
     if show_result:
         print(f"chosen:{place_hash}:{action.detach().cpu().numpy()}")
-    r, c = place_hash // BOARD_SIZE, place_hash % BOARD_SIZE
+    r, c = place_hash // board_size, place_hash % board_size
     env.step(who, (r, c))
 
     done = env.check()

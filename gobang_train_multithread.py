@@ -9,8 +9,8 @@ import agent
 import environment
 
 TRAIN_TIME = 500
-BOARD_SIZE = 3
-WIN_SIZE = 3
+BOARD_SIZE = 8
+WIN_SIZE = 5
 MODULE_SAVE_PATH = "./best_gobang_multi.pth"
 MODULE_UE_SAVE_PATH = "./best_gobang_multi_ue.pth"
 LEARNING_RATE = 0.0001
@@ -112,13 +112,13 @@ def train(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode:
         env.clear()
         cnt = 0
         while True:
-            done = robot_step(env.A, robot_A, env, memorize_to_robot=tol_robot, is_train=False)
+            done = robot_step(env.A, robot_A, env, memorize_to_robot=tol_robot, is_train=False, board_size=BOARD_SIZE)
             cnt += 1
             if done != 0:
                 who_win = done
                 break
 
-            done = robot_step(env.B, robot_B, env, memorize_to_robot=tol_robot, is_train=False)
+            done = robot_step(env.B, robot_B, env, memorize_to_robot=tol_robot, is_train=False, board_size=BOARD_SIZE)
             cnt += 1
             if done != 0:
                 who_win = done
@@ -137,21 +137,24 @@ def valid(robot, valid_num: int = 10):
     robot_A = agent.gobang_dm.dm_robot(env=env, color=env.A)
     robot_B = agent.gobang_dm.dm_robot(env=env, color=env.B)
 
-    A_draw_cnt, A_win_cnt, A_lose_cnt = 0, 0, 0
-    B_draw_cnt, B_win_cnt, B_lose_cnt = 0, 0, 0
+    A_draw_cnt, A_win_cnt, A_lose_cnt, A_tol_place = 0, 0, 0, 0
+    B_draw_cnt, B_win_cnt, B_lose_cnt, B_tol_place = 0, 0, 0, 0
 
     with torch.no_grad():
         for _ in range(valid_num):
             while True:
-                done = robot_step(env.A, robot, env, memorize_to_robot=None, is_train=False)
+                done = robot_step(env.A, robot, env, memorize_to_robot=None, is_train=False, board_size=BOARD_SIZE)
+                A_tol_place += 1
                 if done != 0:
                     who_win = done
                     break
 
-                done = robot_step(env.B, robot_B, env, memorize_to_robot=None, is_train=False)
+                done = robot_step(env.B, robot_B, env, memorize_to_robot=None, is_train=False, board_size=BOARD_SIZE)
+                A_tol_place += 1
                 if done != 0:
                     who_win = done
                     break
+
             if who_win == env.draw_play:
                 A_draw_cnt += 1
             elif who_win == env.A:
@@ -162,12 +165,14 @@ def valid(robot, valid_num: int = 10):
             env.clear()
 
             while True:
-                done = robot_step(env.A, robot_A, env, memorize_to_robot=None, is_train=False)
+                done = robot_step(env.A, robot_A, env, memorize_to_robot=None, is_train=False, board_size=BOARD_SIZE)
+                B_tol_place += 1
                 if done != 0:
                     who_win = done
                     break
 
-                done = robot_step(env.B, robot, env, memorize_to_robot=None, is_train=False)
+                done = robot_step(env.B, robot, env, memorize_to_robot=None, is_train=False, board_size=BOARD_SIZE)
+                B_tol_place += 1
                 if done != 0:
                     who_win = done
                     break
@@ -180,8 +185,10 @@ def valid(robot, valid_num: int = 10):
 
             env.clear()
 
-    print("\tdraw:{}, win:{}, loss:{} as playerA.".format(A_draw_cnt, A_win_cnt, A_lose_cnt))
-    print("\tdraw:{}, win:{}, loss:{} as playerB.".format(B_draw_cnt, B_win_cnt, B_lose_cnt))
+    print("\tdraw: {}, win: {}, loss: {} as playerA, using {:.3f} avg place.".format(A_draw_cnt, A_win_cnt, A_lose_cnt,
+                                                                                     A_tol_place / valid_num))
+    print("\tdraw: {}, win: {}, loss: {} as playerB, using {:.3f} avg place.".format(B_draw_cnt, B_win_cnt, B_lose_cnt,
+                                                                                     B_tol_place / valid_num))
 
 
 def main():

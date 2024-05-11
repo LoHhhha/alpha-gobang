@@ -10,6 +10,9 @@ class hNet_RL_v1(nn.Module):
 
         self.get_mask = nn.Sequential(
             nn.Conv1d(1, 1, kernel_size=1, stride=1),
+            nn.PReLU(),
+            nn.Conv1d(1, 1, kernel_size=1, stride=1),
+            nn.PReLU()
         )
 
         self.catch = nn.Sequential(

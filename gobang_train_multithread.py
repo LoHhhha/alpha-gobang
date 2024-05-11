@@ -18,6 +18,8 @@ SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
 MAX_MEMORY_SIZE = 51200
 BATCH_SIZE = 10240
+VALID_EPOCH = 5
+VALID_GAME_NUMBERS = 10
 
 # THREAD_NUM base on EPSILON_LIST
 # each tuple in EPSILON_LIST is (ROBOT_A_EPSILON, ROBOT_A_EPSILON_DECAY, ROBOT_B_EPSILON, ROBOT_B_EPSILON_DECAY)
@@ -130,6 +132,58 @@ def train(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode:
         game_over_count.release(1)
 
 
+def valid(robot, valid_num: int = 10):
+    env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
+    robot_A = agent.gobang_dm.dm_robot(env=env, color=env.A)
+    robot_B = agent.gobang_dm.dm_robot(env=env, color=env.B)
+
+    A_draw_cnt, A_win_cnt, A_lose_cnt = 0, 0, 0
+    B_draw_cnt, B_win_cnt, B_lose_cnt = 0, 0, 0
+
+    with torch.no_grad():
+        for _ in range(valid_num):
+            while True:
+                done = robot_step(env.A, robot, env, memorize_to_robot=None, is_train=False)
+                if done != 0:
+                    who_win = done
+                    break
+
+                done = robot_step(env.B, robot_B, env, memorize_to_robot=None, is_train=False)
+                if done != 0:
+                    who_win = done
+                    break
+            if who_win == env.draw_play:
+                A_draw_cnt += 1
+            elif who_win == env.A:
+                A_win_cnt += 1
+            else:
+                A_lose_cnt += 1
+
+            env.clear()
+
+            while True:
+                done = robot_step(env.A, robot_A, env, memorize_to_robot=None, is_train=False)
+                if done != 0:
+                    who_win = done
+                    break
+
+                done = robot_step(env.B, robot, env, memorize_to_robot=None, is_train=False)
+                if done != 0:
+                    who_win = done
+                    break
+            if who_win == env.draw_play:
+                B_draw_cnt += 1
+            elif who_win == env.B:
+                B_win_cnt += 1
+            else:
+                B_lose_cnt += 1
+
+            env.clear()
+
+    print("\tdraw:{}, win:{}, loss:{} as playerA.".format(A_draw_cnt, A_win_cnt, A_lose_cnt))
+    print("\tdraw:{}, win:{}, loss:{} as playerB.".format(B_draw_cnt, B_win_cnt, B_lose_cnt))
+
+
 def main():
     @atexit.register
     def when_unexpect_exit():
@@ -159,6 +213,9 @@ def main():
 
         avg_time = 0.5 * (avg_time + diff_time)
         print(f"Epoch {epoch + 1}/{TRAIN_TIME}, {diff_time:.3f}it/s, {avg_time * (TRAIN_TIME - epoch - 1):.0f}s left.")
+
+        if epoch % VALID_EPOCH == 0:
+            valid(tol_robot, valid_num=VALID_GAME_NUMBERS)
 
     tol_robot.save(MODULE_SAVE_PATH)
 

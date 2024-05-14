@@ -46,25 +46,23 @@ def play_with_dm(board_size: int, win_size: int):
 
     with torch.no_grad():
         while True:
-            done = robot_step(env.A, robot, env, is_train=False, show_result=True, board_size=BOARD_SIZE)
+            done = robot_step(env.A, robot, env, is_train=False, show_result=True, board_size=BOARD_SIZE)   # 模型执黑下
 
-            if done != 0:
+            if done != 0:   # 游戏结束
                 break
 
             env.display()
 
-            while True:
+            while True: # 输入要下的棋子位置
                 a = int(input("r->"))
                 b = int(input("c->"))
-                if env.board[a][b] != 0:
+                if env.board[a][b] != 0:    # 输入不合法，重新输入
                     continue
-
-                env.step(env.B, (a, b))
-
+                env.step(env.B, (a, b)) # 输入成功
                 if env.pre_action is not None:
                     break
 
-            if env.check() != 0:
+            if env.check() != 0:    # 检查游戏是否结束
                 break
 
         env.display()

@@ -4,8 +4,8 @@ import agent
 import environment
 from gobang_train import robot_step
 
-BOARD_SIZE = 5
-WIN_SIZE = 3
+BOARD_SIZE = 8
+WIN_SIZE = 5
 MODULE_SAVE_PATH = "./best_gobang_multi_ue.pth"
 
 
@@ -69,5 +69,5 @@ def play_with_dm(board_size: int, win_size: int):
 
 
 if __name__ == '__main__':
-    # play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
+    play(BOARD_SIZE, WIN_SIZE, MODULE_SAVE_PATH)
     play_with_dm(BOARD_SIZE, WIN_SIZE)

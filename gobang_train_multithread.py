@@ -223,6 +223,7 @@ def main():
 
         if epoch % VALID_EPOCH == 0:
             valid(tol_robot, valid_num=VALID_GAME_NUMBERS)
+            print("\tState count: {}".format(len(tol_robot.memory)))
 
     tol_robot.save(MODULE_SAVE_PATH)
 

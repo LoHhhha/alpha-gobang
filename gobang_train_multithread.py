@@ -1,4 +1,5 @@
 import atexit
+import datetime
 import queue
 import threading
 import time
@@ -8,16 +9,18 @@ import torch
 import agent
 import environment
 
-TRAIN_TIME = 500
+TRAIN_TIME = 1000
 BOARD_SIZE = 8
 WIN_SIZE = 5
-MODULE_SAVE_PATH = "./best_gobang_multi.pth"
-MODULE_UE_SAVE_PATH = "./best_gobang_multi_ue.pth"
+MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                    f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_multi.pth")
+MODULE_UE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                       f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_multi_ue.pth")
 LEARNING_RATE = 0.0001
 SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
-MAX_MEMORY_SIZE = 51200
-BATCH_SIZE = 10240
+MAX_MEMORY_SIZE = 10240
+BATCH_SIZE = 2560
 VALID_EPOCH = 5
 VALID_GAME_NUMBERS = 10
 

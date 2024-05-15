@@ -1,4 +1,5 @@
 import atexit
+import datetime
 
 import torch
 import time
@@ -8,8 +9,10 @@ import environment
 TRAIN_TIME = 20000
 BOARD_SIZE = 3
 WIN_SIZE = 3
-MODULE_SAVE_PATH = "./best_gobang.pth"
-MODULE_UE_SAVE_PATH = "best_gobang_ue.pth"
+MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                    f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.pth")
+MODULE_UE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                       f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_ue.pth")
 LEARNING_RATE = 0.0001
 SHOW_BOARD_TIME = 10
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"

@@ -14,7 +14,7 @@ CELL_SIZE = 40  # 单元格大小
 WIN_SIZE = 3  # 胜利数
 HUMAN_COLOR = 2  # 执棋颜色 黑1 白2 黑子先手
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
-MODULE_PATH = "./best_gobang.pth"
+MODULE_PATH = None
 DEMO_PATH = './demo.txt'
 OPTION = 0  # 游玩 0 demo演示 1
 
@@ -29,7 +29,11 @@ class GobangGame:
         self.env = environment.gobang.game(board_size=GRID_SIZE, win_size=WIN_SIZE)
         self.player_human = self.env.A if HUMAN_COLOR == 1 else self.env.B
         self.player_robot = self.env.A if HUMAN_COLOR == 2 else self.env.B
-        self.robot = agent.gobang_dm.dm_robot(self.player_robot, self.env, display_reward=False)
+        if MODULE_PATH is None:
+            self.robot = agent.gobang_dm.dm_robot(self.player_robot, self.env, display_reward=False)
+        else:
+            self.robot = agent.gobang.robot(module_save_path=MODULE_PATH, epsilon=0, board_size=GRID_SIZE)
+            self.robot.module.eval()
         self.is_pause = False
 
     # 绘制棋盘

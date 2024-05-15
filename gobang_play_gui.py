@@ -9,10 +9,10 @@ import agent
 import environment
 from gobang_train import robot_step
 
-GRID_SIZE = 15  # 棋盘格子数
+GRID_SIZE = 3  # 棋盘格子数
 CELL_SIZE = 40  # 单元格大小
-WIN_SIZE = 5  # 胜利数
-HUMAN_COLOR = 1  # 执棋颜色 黑1 白2 黑子先手
+WIN_SIZE = 3  # 胜利数
+HUMAN_COLOR = 2  # 执棋颜色 黑1 白2 黑子先手
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
 MODULE_PATH = "./best_gobang.pth"
 DEMO_PATH = './demo.txt'
@@ -62,19 +62,32 @@ class GobangGame:
         with torch.no_grad():
             self.env.step(self.player_human, (row, col))
             self.display()
-            if self.env.check() == 0:
+
+            done = self.env.check()
+
+            # computer can place
+            if done == 0:
                 done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
                                   board_size=GRID_SIZE)
-                if done != 0:
-                    self.display()
-                    print("Computer wins!")
-                    messagebox.showinfo(title="游戏结束", message="Computer wins!")
-                    self.is_pause = True
-            else:
+
+            if done == 0:
+                pass
+            if done == self.player_robot:
+                self.display()
+                print("Computer wins!")
+                messagebox.showinfo(title="游戏结束", message="Computer wins!")
+                self.is_pause = True
+            elif done == self.player_human:
                 self.display()
                 print("You win!")
                 messagebox.showinfo(title="游戏结束", message="You win!")
                 self.is_pause = True
+            elif done == self.env.draw_play:
+                self.display()
+                print("Draw!")
+                messagebox.showinfo(title="游戏结束", message="Draw!")
+                self.is_pause = True
+
             self.display()
 
     def run(self):

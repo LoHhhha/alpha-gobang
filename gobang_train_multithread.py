@@ -9,47 +9,48 @@ import torch
 import agent
 import environment
 
-TRAIN_TIME = 1000
+TRAIN_TIME = 2000
 BOARD_SIZE = 8
 WIN_SIZE = 5
-MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
-                    f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_multi.pth")
-MODULE_UE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
-                       f"{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_multi_ue.pth")
-LEARNING_RATE = 0.0001
-SHOW_BOARD_TIME = 10
+LEARNING_RATE = 0.01
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
-MAX_MEMORY_SIZE = 10240
-BATCH_SIZE = 2560
+MAX_MEMORY_SIZE = 2560
+BATCH_SIZE = 256
 VALID_EPOCH = 5
 VALID_GAME_NUMBERS = 10
+
+STATR_TIME = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                    f"{STATR_TIME}_multi.pth")
+BEST_MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                         f"{STATR_TIME}_multi_best.pth")
+MODULE_UE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                       f"{STATR_TIME}_multi_ue.pth")
+BEST_UE_MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                            f"{STATR_TIME}_multi_best_ue.pth")
 
 # THREAD_NUM base on EPSILON_LIST
 # each tuple in EPSILON_LIST is (ROBOT_A_EPSILON, ROBOT_A_EPSILON_DECAY, ROBOT_B_EPSILON, ROBOT_B_EPSILON_DECAY)
 # when ROBOT_A_EPSILON==-1 means use gobang_dm
 EPSILON_LIST = [
-    (0.8, 0.99, 0, 1),
-    (0.8, 0.99, 0.1, 1),
-    (0.8, 0.99, 0.2, 1),
-    (0.8, 0.99, 0.3, 1),
-    (0.8, 0.99, 0.4, 1),
-    (0.8, 0.99, 0.5, 1),
-    (0.8, 0.99, 0.6, 1),
-    (0.8, 0.99, 0.7, 1),
-    (0.8, 0.99, 0.8, 1),
-    (0.8, 0.99, 0.9, 1),
-    (0.8, 0.99, 1, 1),
-    (0.8, 0.99, 1, 1),
-    (0.8, 0.99, -1, 1),
-    (0.8, 0.99, -1, 1),
-    (-1, 1, 0.8, 0.99),
-    (-1, 1, 0.8, 0.99),
+    (0, 1, 0, 1),
+    (0, 1, 0, 1),
+    (0, 1, 0, 1),
+    (0, 1, 0, 1),
+    (0, 1, -1, 1),
+    (0, 1, -1, 1),
+    (0, 1, -1, 1),
+    (0, 1, -1, 1),
+    (-1, 1, 0, 1),
+    (-1, 1, 0, 1),
+    (-1, 1, 0, 1),
+    (-1, 1, 0, 1),
     (-1, 1, -1, 1),
     (-1, 1, -1, 1),
-    (1, 1, -1, 1),
-    (1, 1, -1, 1),
-    (-1, 1, 1, 1),
-    (-1, 1, 1, 1),
+    (-1, 1, -1, 1),
+    (-1, 1, -1, 1),
+    (1, 1, 1, 1),
+    (1, 1, 1, 1),
     (1, 1, 1, 1),
     (1, 1, 1, 1)
 ]
@@ -65,6 +66,11 @@ tol_robot = agent.gobang.robot(
     batch_size=BATCH_SIZE
 )
 
+torch.manual_seed(19528)
+
+best_module = tol_robot.module
+best_score = -1
+
 thread_num = len(EPSILON_LIST)
 
 # thread semaphore
@@ -74,7 +80,8 @@ start_next_game = threading.Semaphore(0)
 game_info = queue.Queue()
 
 
-def train(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode: float, robot_b_episode_decay: float):
+@torch.no_grad()
+def view(robot_a_episode: float, robot_a_episode_decay: float, robot_b_episode: float, robot_b_episode_decay: float):
     env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
 
     # board_size and lr are meaningless for the next two rebot.
@@ -193,15 +200,23 @@ def valid(robot, valid_num: int = 10):
     print("\tdraw: {}, win: {}, loss: {} as playerB, using {:.3f} avg place.".format(B_draw_cnt, B_win_cnt, B_lose_cnt,
                                                                                      B_tol_place / valid_num))
 
+    global best_score, best_module
+    score = A_draw_cnt + B_draw_cnt + A_win_cnt * 2 + B_win_cnt * 3
+    if score >= best_score:
+        best_score = score
+        best_module.load_state_dict(robot.module.state_dict())
+
 
 def main():
     @atexit.register
     def when_unexpect_exit():
         torch.save(tol_robot.module, MODULE_UE_SAVE_PATH)
+        torch.save(best_module, BEST_UE_MODULE_SAVE_PATH)
         print("[note] because unexpected exit, we save current net as '{}'.".format(MODULE_UE_SAVE_PATH))
+        print("[note] because unexpected exit, we save current net as '{}'.".format(BEST_UE_MODULE_SAVE_PATH))
 
     for args in EPSILON_LIST:
-        sub = threading.Thread(target=train, args=args)
+        sub = threading.Thread(target=view, args=args)
         sub.daemon = True
         sub.start()
 
@@ -229,6 +244,7 @@ def main():
             print("\tState count: {}".format(len(tol_robot.memory)))
 
     tol_robot.save(MODULE_SAVE_PATH)
+    best_module.save(BEST_MODULE_SAVE_PATH)
 
     atexit.unregister(when_unexpect_exit)
 

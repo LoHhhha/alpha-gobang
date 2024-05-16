@@ -116,7 +116,7 @@ class game(env):
                 action,
                 self.N
             )
-        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 10
+        reward += (horizontal_count + vertical_count + diagonal_count + reverse_diagonal_count) * 2
 
         # self
         # guide to attack
@@ -125,7 +125,8 @@ class game(env):
                 action,
                 self_color
             )
-        reward += math.pow(math.e, max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count)) * 10
+        reward += math.pow(math.e,
+                           max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count) - 1) * 20
 
         if max(horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count) >= self.win_size:
             return math.pow(math.e, self.win_size * 2) * 100

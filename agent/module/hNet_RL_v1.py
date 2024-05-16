@@ -2,8 +2,41 @@ import torch
 from torch import nn
 
 
+class convNet(nn.Module):
+    def __init__(self, channels):
+        super(convNet, self).__init__()
+
+        self.parse = nn.Sequential(
+            nn.Conv1d(
+                in_channels=channels,
+                out_channels=channels,
+                stride=1,
+                kernel_size=3,
+                padding=1
+            ),
+            nn.Conv1d(
+                in_channels=channels,
+                out_channels=channels,
+                stride=1,
+                kernel_size=3,
+                padding=1
+            ),
+            nn.Conv1d(
+                in_channels=channels,
+                out_channels=channels,
+                stride=1,
+                kernel_size=3,
+                padding=1
+            ),
+            nn.PReLU()
+        )
+
+    def forward(self, x):
+        return self.parse(x)
+
+
 class hNet_RL_v1(nn.Module):
-    def __init__(self, board_size):
+    def __init__(self, board_size, res_net_layer_number=5):
         super().__init__()
 
         self.conv_size = [1, 8, 16, 32, 64]
@@ -50,6 +83,10 @@ class hNet_RL_v1(nn.Module):
             nn.PReLU(),
         )
 
+        self.resNet = nn.ModuleList(
+            [convNet(self.conv_size[4]) for _ in range(res_net_layer_number)]
+        )
+
         self.push = nn.Sequential(
             nn.Conv1d(
                 in_channels=self.conv_size[4],
@@ -94,6 +131,10 @@ class hNet_RL_v1(nn.Module):
             current_state = current_state + self.get_mask(current_state)
 
             feature = self.catch(current_state)
+
+            for conv in self.resNet:
+                feature = conv(feature) + feature
+
             if res is None:
                 res = self.push(feature)
             else:

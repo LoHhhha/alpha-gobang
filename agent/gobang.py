@@ -52,8 +52,10 @@ class robot(DQN):
         self.module = self.module.to(self.device)
 
     def change_module_from_other(self, other):
-        state = other.module.state_dict()
-        self.module.load_state_dict(state)
+        self.module.load_state_dict(other.module.state_dict())
+
+    def change_module_from_module(self, module):
+        self.module.load_state_dict(module.state_dict())
 
     def reduce_epsilon(self):
         self.epsilon = self.epsilon * self.epsilon_decay
@@ -126,11 +128,11 @@ class robot(DQN):
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
         # change target
-        for i in range(len(done)):
-            for j in range(len(state[i])):
-                # cannot place
-                if state[i][j] != 0:
-                    target[i][j] = 0
+        # for i in range(len(done)):
+        #     for j in range(len(state[i])):
+        #         # cannot place
+        #         if state[i][j] != 0:
+        #             target[i][j] = -2560
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)
@@ -146,10 +148,14 @@ class robot(DQN):
             self.train(states, actions, rewards, next_states, dones)
             return
 
-        for i in range(0, len(self.memory), self.batch_size):
-            sample = itertools.islice(self.memory, i,min(len(self.memory), i + self.batch_size))
-            states, actions, rewards, next_states, dones = zip(*sample)
-            self.train(states, actions, rewards, next_states, dones)
+        # for i in range(0, len(self.memory), self.batch_size):
+        #     sample = itertools.islice(self.memory, i, min(len(self.memory), i + self.batch_size))
+        #     states, actions, rewards, next_states, dones = zip(*sample)
+        #     self.train(states, actions, rewards, next_states, dones)
+
+        sample = random.sample(self.memory, self.batch_size)
+        states, actions, rewards, next_states, dones = zip(*sample)
+        self.train(states, actions, rewards, next_states, dones)
 
     def save(self, path: str):
         torch.save(self.module, path)

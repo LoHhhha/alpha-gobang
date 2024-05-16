@@ -73,6 +73,33 @@ class game(env):
 
         return horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count
 
+    # 游戏结束返回1
+    def check_game_end(self):
+        if self.pre_action is None:
+            return 0
+
+        action = self.pre_action
+
+        self_color = self.board[action[0]][action[1]]
+        horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count = \
+            self.get_neighbor_info(
+                action,
+                self_color
+            )
+
+        if max(
+            horizontal_count,
+            vertical_count,
+            diagonal_count,
+            reverse_diagonal_count,
+        ) >= self.win_size:
+            done =1
+        else:done=0
+
+        if done == 0 and self.count == 0:
+            return self.draw_play
+        return done
+
     def check(self) -> int:
         if self.pre_action is None:
             return 0

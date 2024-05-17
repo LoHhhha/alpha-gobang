@@ -24,7 +24,7 @@ class env:
         pass
 
     @abc.abstractmethod
-    def get_state(self,agent):
+    def get_state(self, agent):
         """
         such as: return state.copy()
         """

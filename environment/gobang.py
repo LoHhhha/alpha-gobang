@@ -88,23 +88,25 @@ class game(env):
             )
 
         if max(
-            horizontal_count,
-            vertical_count,
-            diagonal_count,
-            reverse_diagonal_count,
+                horizontal_count,
+                vertical_count,
+                diagonal_count,
+                reverse_diagonal_count,
         ) >= self.win_size:
-            done =1
-        else:done=0
+            done = 1
+        else:
+            done = 0
 
         if done == 0 and self.count == 0:
             return self.draw_play
         return done
 
-    def check(self) -> int:
+    def check(self, action: Tuple[int, int] | None = None) -> int:
         if self.pre_action is None:
-            return 0
-
-        action = self.pre_action
+            if action is None:
+                return 0
+        else:
+            action = self.pre_action
 
         self_color = self.board[action[0]][action[1]]
         horizontal_count, vertical_count, diagonal_count, reverse_diagonal_count = \
@@ -185,7 +187,9 @@ class game(env):
         return state
 
     def clear(self):
-        self.board = np.zeros((self.board_size, self.board_size), dtype=np.int32)
+        # let all places to be self.N, but don't change the ptr
+        # board should be readonly
+        self.board[0:][0:] = self.N
         self.pre_action = None
         self.count = self.board_size * self.board_size
 

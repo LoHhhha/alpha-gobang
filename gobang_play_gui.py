@@ -12,7 +12,7 @@ from gobang_train import robot_step
 GRID_SIZE = 8  # 棋盘格子数
 WIN_SIZE = 5  # 胜利数
 HUMAN_COLOR = 2  # 执棋颜色 黑1 白2 黑子先手
-MODULE_PATH = None
+MODULE_PATH = "alpha_gobang_B5_W5_20240517231921_multi_best_ue.pth"
 
 OPTION = 0  # 游玩 0 demo演示 1
 DEMO_PATH = './demo.txt'

@@ -9,13 +9,13 @@ import torch
 import agent
 import environment
 
-TRAIN_TIME = 2000
-BOARD_SIZE = 8
+TRAIN_TIME = 1000
+BOARD_SIZE = 5
 WIN_SIZE = 5
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.00001
 DEVICE = torch.device("cpu")  # if you wait to use cuda: "DEVICE = torch.device("cuda")"
 MAX_MEMORY_SIZE = 2560
-BATCH_SIZE = 256
+BATCH_SIZE = 512
 VALID_EPOCH = 5
 VALID_GAME_NUMBERS = 10
 

@@ -36,7 +36,7 @@ class convNet(nn.Module):
 
 
 class hNet_RL_v1(nn.Module):
-    def __init__(self, board_size, res_net_layer_number=5):
+    def __init__(self, board_size, res_net_layer_number=16):
         super().__init__()
 
         self.conv_size = [1, 8, 16, 32, 64]
@@ -142,8 +142,54 @@ class hNet_RL_v1(nn.Module):
         return res
 
 
+class hNet_RL_v1_Sigmoid(hNet_RL_v1):
+    def __init__(self, board_size, res_net_layer_number=16):
+        super().__init__(board_size=board_size, res_net_layer_number=res_net_layer_number)
+        self.push = nn.Sequential(
+            nn.Conv1d(
+                in_channels=self.conv_size[4],
+                out_channels=self.conv_size[3],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[3],
+                out_channels=self.conv_size[2],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[2],
+                out_channels=self.conv_size[2],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.PReLU(),
+            nn.Conv1d(
+                in_channels=self.conv_size[2],
+                out_channels=self.conv_size[1],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[1],
+                out_channels=self.conv_size[0],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[0],
+                out_channels=self.conv_size[0],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Sigmoid(),
+        )
+
+
 if __name__ == '__main__':
     _input = torch.randn(2, 9)
     net = hNet_RL_v1(board_size=9)
     output = net(_input)
     print(output.shape)
+    print(output)
+
+    _input = torch.randn(2, 9)
+    net = hNet_RL_v1_Sigmoid(board_size=9)
+    output = net(_input)
+    print(output.shape)
+    print(output)

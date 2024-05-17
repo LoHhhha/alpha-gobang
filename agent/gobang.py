@@ -4,6 +4,8 @@ from collections import deque
 import random
 import torch.nn
 import numpy as np
+from torch import nn
+
 from agent.dqn_trainer import DQN
 
 # if you want to change net, plz just "... as Net"
@@ -23,11 +25,15 @@ class robot(DQN):
                  lr=0.01,
                  max_memory_size=MAX_MEMORY,
                  batch_size=BATCH_SIZE,
+                 module: nn.Module = None,
                  ):
         super().__init__(learning_rate=lr)
 
         if module_save_path is None:
-            self.module = Net(board_size=board_size)
+            if module is None:
+                self.module = Net(board_size=board_size)
+            else:
+                self.module = module
         else:
             self.module = torch.load(module_save_path)
 
@@ -89,8 +95,8 @@ class robot(DQN):
             best_score = float('-inf')
             for i in range(len(state)):
                 if state[i] == 0:
-                    if best_score < action[i]:
-                        best_score = action[i]
+                    if best_score < action[i].item():
+                        best_score = action[i].item()
                         best_place = i
             action = torch.zeros(self.board_size * self.board_size, dtype=torch.float)
             action[best_place] = 1
@@ -128,11 +134,11 @@ class robot(DQN):
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
         # change target
-        # for i in range(len(done)):
-        #     for j in range(len(state[i])):
-        #         # cannot place
-        #         if state[i][j] != 0:
-        #             target[i][j] = -2560
+        for i in range(len(done)):
+            for j in range(len(state[i])):
+                # cannot place
+                if state[i][j] != 0:
+                    target[i][j] = -2560
 
         self.optimizer.zero_grad()
         loss = self.loss(pred, target)

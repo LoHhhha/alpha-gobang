@@ -81,7 +81,7 @@ class robot(DQN):
         action[chosen] = 1
         return action.to(self.device)
 
-    def get_action(self, state, need_random=False):
+    def get_action(self, state, need_random=False, show_result=False):
         # update:
         # let robot always make a logical action.
         # base action will not affect train, so let the place chosen be 1.
@@ -90,7 +90,8 @@ class robot(DQN):
             action = self.random_action(state)
         else:
             action = self.module(torch.tensor(state, device=self.device, dtype=torch.float).unsqueeze(0))[0].detach()
-            # print(action)
+            if show_result:
+                print(action)
             best_place = -1
             best_score = float('-inf')
             for i in range(len(state)):

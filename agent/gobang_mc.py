@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 import torch
+from torch import nn
 
 import environment
 # if you want to change net, plz just "... as Net"
@@ -21,6 +22,7 @@ class mc_robot:
             search_node_number=10,
             small_random_select_rate=0.3,
             gamma=0.6,
+            draw_play_is_win=False,
             value_from_dm=False,  # true: node sort by dmt, else sort by module output
             max_memory_size=MAX_MEMORY,
             batch_size=BATCH_SIZE,
@@ -32,6 +34,9 @@ class mc_robot:
         self.learning_rate = learning_rate
         if module is None:
             self.module = Net(board_size=board_size)
+            for m in self.module.modules():
+                if isinstance(m, (nn.Conv1d, nn.Linear, nn.Conv2d)):
+                    nn.init.xavier_uniform_(m.weight)
         else:
             self.module = module
         self.module = self.module.to(device)
@@ -51,6 +56,7 @@ class mc_robot:
         self.small_random_select_number = int(small_random_select_rate * search_node_number)
         self.big_select_number = search_node_number - self.small_random_select_number
         self.value_from_dm = value_from_dm
+        self.draw_play_is_win = draw_play_is_win
 
     def search_and_get_experience(self, env: environment.gobang, who: int) -> Tuple[int, int, int]:
         current_state = env.get_state(who)
@@ -88,7 +94,10 @@ class mc_robot:
             done = env.check((place_r, place_c))
             if done != 0:
                 leave_cnt += 1
-                if done != env.draw_play:
+                if done == env.draw_play:
+                    expected_output[i] = 1 if self.draw_play_is_win else 0
+                    win_leave_cnt += 1 if self.draw_play_is_win else 0
+                else:
                     expected_output[i] = 1
                     win_leave_cnt += 1
             else:
@@ -98,12 +107,16 @@ class mc_robot:
 
                 # tips: need convert
                 leave_cnt += sub_node_leave_cnt
-                win_leave_cnt += sub_node_leave_cnt - sub_loss_leave_cnt
-                loss_leave_cnt += sub_node_win_leave_cnt
+                if self.draw_play_is_win:
+                    win_leave_cnt += sub_node_leave_cnt - sub_loss_leave_cnt
+                    loss_leave_cnt += sub_node_win_leave_cnt
+                else:
+                    win_leave_cnt += sub_loss_leave_cnt
+                    loss_leave_cnt += sub_node_leave_cnt - sub_node_win_leave_cnt
 
                 if sub_node_leave_cnt == 0:
                     # draw
-                    expected_output[i] = 1
+                    expected_output[i] = 1 if self.draw_play_is_win else 0
                 else:
                     expected_output[i] = \
                         expected_output[i] * (1 - self.gamma) + sub_loss_leave_cnt * self.gamma / sub_node_leave_cnt
@@ -114,9 +127,10 @@ class mc_robot:
 
         return win_leave_cnt, loss_leave_cnt, leave_cnt
 
-    def get_action(self, state):
+    def get_action(self, state, show_result=False):
         action = self.module(torch.tensor(state, device=self.device, dtype=torch.float).unsqueeze(0))[0].detach()
-        print(action)
+        if show_result:
+            print(action)
         best_p, chosen = -1, -1
         base = 1.0
         for i in range(len(state)):
@@ -134,8 +148,8 @@ class mc_robot:
         return action
 
     def train(self, state, expected_output):
-        state = torch.tensor(state, dtype=torch.float).to(self.device)
-        expected_output = torch.tensor(expected_output, dtype=torch.float).to(self.device)
+        state = torch.tensor(np.array(state), dtype=torch.float).to(self.device)
+        expected_output = torch.tensor(np.array(expected_output), dtype=torch.float).to(self.device)
 
         if len(state.shape) == 1:
             state = torch.unsqueeze(state, 0)

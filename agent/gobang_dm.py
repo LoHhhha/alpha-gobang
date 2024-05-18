@@ -13,7 +13,7 @@ class dm_robot:
         self.color = color
         self.display_reward = display_reward
 
-    def get_action(self, state):
+    def get_action(self, state, show_result=False):
 
         qu = queue.Queue()
         best_score = float('-inf')

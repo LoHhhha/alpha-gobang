@@ -1,3 +1,6 @@
+import atexit
+import datetime
+
 import torch
 
 import agent.gobang
@@ -5,17 +8,24 @@ import environment
 from gobang_train import robot_step
 
 SIM_NUM = 100
-SEARCH_NODE = 2
+SEARCH_NODE = 3
 BOARD_SIZE = 3
 WIN_SIZE = 3
 NODE_VALUE_FROM_DM = True
-SMALL_P_NODE_RANDOM_SELECT_RATE = 0
+DRAW_PLAY_IS_WIN = False
+SMALL_P_NODE_RANDOM_SELECT_RATE = 0.7
 MAX_MEMORY_SIZE = 5120
-BATCH_SIZE = 512
-LEARNING_RATE = 0.0000005
-GAMMA = 0.5
+BATCH_SIZE = 1024
+LEARNING_RATE = 0.0001
+GAMMA = 0.2
 DEVICE = torch.device('cpu')
-LOSS_FUNC_CLASS = torch.nn.MSELoss
+LOSS_FUNC_CLASS = torch.nn.SmoothL1Loss
+
+STATR_TIME = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+MODULE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                    f"{STATR_TIME}_mcts.pth")
+MODULE_UE_SAVE_PATH = (f"./alpha_gobang_B{BOARD_SIZE}_W{WIN_SIZE}_"
+                       f"{STATR_TIME}_mcts_ue.pth")
 
 torch.manual_seed(19528)
 
@@ -28,6 +38,7 @@ robot_mc = agent.gobang_mc.mc_robot(
     search_node_number=SEARCH_NODE,
     small_random_select_rate=SMALL_P_NODE_RANDOM_SELECT_RATE,
     value_from_dm=NODE_VALUE_FROM_DM,
+    draw_play_is_win=DRAW_PLAY_IS_WIN,
     gamma=GAMMA,
     device=DEVICE,
     loss_class=LOSS_FUNC_CLASS
@@ -57,11 +68,18 @@ def simulate():
             break
 
 
-
 def main():
+    @atexit.register
+    def when_unexpect_exit():
+        torch.save(robot_mc.module, MODULE_UE_SAVE_PATH)
+        print("[note] because unexpected exit, we save current net as '{}'.".format(MODULE_UE_SAVE_PATH))
+
     for i in range(SIM_NUM):
         simulate()
-        print("OK")
+        print(f"OK {i + 1}/{SIM_NUM}")
+
+    torch.save(robot_mc.module, MODULE_SAVE_PATH)
+    atexit.unregister(when_unexpect_exit)
 
 
 if __name__ == '__main__':

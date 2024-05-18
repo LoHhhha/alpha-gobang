@@ -30,7 +30,7 @@ def robot_step(
         show_result: bool = False,
         board_size: int = BOARD_SIZE):
     state = env.get_state(who)
-    action = robot.get_action(state)
+    action = robot.get_action(state, show_result=show_result)
 
     place_hash = torch.argmax(action).item()
     if show_result:

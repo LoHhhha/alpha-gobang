@@ -26,8 +26,6 @@ class GobangGame:
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.grid_length = grid_size * cell_size
-        self.screen = pygame.display.set_mode((self.grid_length, self.grid_length))
-        pygame.display.set_caption("Alpha Gobang Game")
         self.env = environment.gobang.game(board_size=GRID_SIZE, win_size=WIN_SIZE)
         self.player_human = self.env.A if HUMAN_COLOR == 1 else self.env.B
         self.player_robot = self.env.A if HUMAN_COLOR == 2 else self.env.B
@@ -37,6 +35,8 @@ class GobangGame:
             self.robot = agent.gobang.robot(module_save_path=MODULE_PATH, epsilon=0, board_size=GRID_SIZE)
             self.robot.module.eval()
         self.is_pause = False
+        self.screen = pygame.display.set_mode((self.grid_length, self.grid_length))
+        pygame.display.set_caption("Alpha Gobang Game")
 
     # 绘制棋盘
     def draw_board(self):

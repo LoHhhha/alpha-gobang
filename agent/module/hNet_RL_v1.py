@@ -39,7 +39,7 @@ class hNet_RL_v1(nn.Module):
     def __init__(self, board_size, res_net_layer_number=16):
         super().__init__()
 
-        self.conv_size = [1, 8, 16, 32, 64]
+        self.conv_size = [1, 16, 32]
 
         self.get_mask = nn.Sequential(
             nn.Conv1d(1, 1, kernel_size=1, stride=1),
@@ -56,54 +56,38 @@ class hNet_RL_v1(nn.Module):
             ),
             nn.Conv1d(
                 in_channels=self.conv_size[1],
-                out_channels=self.conv_size[2],
+                out_channels=self.conv_size[1],
                 stride=1, kernel_size=3, padding=1
             ),
             nn.Conv1d(
-                in_channels=self.conv_size[2],
-                out_channels=self.conv_size[2],
+                in_channels=self.conv_size[1],
+                out_channels=self.conv_size[1],
                 stride=1, kernel_size=3, padding=1
             ),
             nn.Softplus(),
             nn.Conv1d(
+                in_channels=self.conv_size[1],
+                out_channels=self.conv_size[2],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
                 in_channels=self.conv_size[2],
-                out_channels=self.conv_size[3],
+                out_channels=self.conv_size[2],
                 stride=1, kernel_size=3, padding=1
             ),
             nn.Conv1d(
-                in_channels=self.conv_size[3],
-                out_channels=self.conv_size[4],
-                stride=1, kernel_size=3, padding=1
-            ),
-            nn.Conv1d(
-                in_channels=self.conv_size[4],
-                out_channels=self.conv_size[4],
+                in_channels=self.conv_size[2],
+                out_channels=self.conv_size[2],
                 stride=1, kernel_size=3, padding=1
             ),
             nn.Softplus(),
         )
 
         self.resNet = nn.ModuleList(
-            [convNet(self.conv_size[4]) for _ in range(res_net_layer_number)]
+            [convNet(self.conv_size[2]) for _ in range(res_net_layer_number)]
         )
 
         self.push = nn.Sequential(
-            nn.Conv1d(
-                in_channels=self.conv_size[4],
-                out_channels=self.conv_size[3],
-                stride=1, kernel_size=3, padding=1
-            ),
-            nn.Conv1d(
-                in_channels=self.conv_size[3],
-                out_channels=self.conv_size[2],
-                stride=1, kernel_size=3, padding=1
-            ),
-            nn.Conv1d(
-                in_channels=self.conv_size[2],
-                out_channels=self.conv_size[2],
-                stride=1, kernel_size=3, padding=1
-            ),
-            nn.PReLU(),
             nn.Conv1d(
                 in_channels=self.conv_size[2],
                 out_channels=self.conv_size[1],
@@ -111,6 +95,22 @@ class hNet_RL_v1(nn.Module):
             ),
             nn.Conv1d(
                 in_channels=self.conv_size[1],
+                out_channels=self.conv_size[1],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[1],
+                out_channels=self.conv_size[1],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.PReLU(),
+            nn.Conv1d(
+                in_channels=self.conv_size[1],
+                out_channels=self.conv_size[0],
+                stride=1, kernel_size=3, padding=1
+            ),
+            nn.Conv1d(
+                in_channels=self.conv_size[0],
                 out_channels=self.conv_size[0],
                 stride=1, kernel_size=3, padding=1
             ),
@@ -143,7 +143,7 @@ class hNet_RL_v1(nn.Module):
 
 
 class hNet_RL_v1_Sigmoid(hNet_RL_v1):
-    def __init__(self, board_size, res_net_layer_number=2):
+    def __init__(self, board_size, res_net_layer_number=1):
         super().__init__(board_size=board_size, res_net_layer_number=res_net_layer_number)
         self.push[-1] = nn.Sigmoid()
 

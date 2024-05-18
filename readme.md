@@ -1,6 +1,6 @@
 # alpha-gobang
 
-## requirement
+## Requirement
 
 ```
 python>=3.12.2
@@ -59,7 +59,7 @@ tips: 模型输出为棋子放于各点后的可能得到的最大分数
   * `B`预期是在训练的全阶段都存在一定概率的随机,使得训练中持续存在更多的行为
   * 最终的训练状态是不断根据现有参数调优，完成对解的拟合。
 
-### Deep Q-learning with multithread
+### Deep Q-learning with Multithread
 
 ```
 python gobang_train_multithread.py
@@ -96,18 +96,18 @@ python gobang_train_multithread.py
 3. 训练整体模型
 4. 回到`1`
 
-### Win is The Best
+### only win and loss
 
   ```
   python gobang_l_train.py
   ```
 
-TODO
+Not ready now.
   
 ### Monte Carlo Search Tree Lite
 
   ```
-  python gobang_train_mcts.py
+  python gobang_train_mcts_lite.py
   ```
 
 tips: 模型输出为棋子放于各点后的胜率

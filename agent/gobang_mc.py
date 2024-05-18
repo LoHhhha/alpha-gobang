@@ -55,10 +55,17 @@ class mc_robot:
         self.search_node_number = search_node_number
         self.small_random_select_number = int(small_random_select_rate * search_node_number)
         self.big_select_number = search_node_number - self.small_random_select_number
+
+        print(
+            f"small_random_select_number={self.small_random_select_number}, big_select_number={self.big_select_number}"
+        )
+
         self.value_from_dm = value_from_dm
         self.draw_play_is_win = draw_play_is_win
 
     def search_and_get_experience(self, env: environment.gobang, who: int) -> Tuple[int, int, int]:
+        # using env.board to record!!
+
         current_state = env.get_state(who)
 
         d_current_state = torch.Tensor(current_state).to(self.device).unsqueeze(0)
@@ -66,6 +73,13 @@ class mc_robot:
 
         next_place = []
         expected_output = np.zeros(self.board_size * self.board_size)
+
+        '''
+        this follow win_place and other_win_place is expected to be very useful, but Things go athwart!!!!!!!
+        '''
+        # win_place = set()
+        # other_win_place = set()
+
         for i in range(len(current_state)):
             if env.board[i // self.board_size][i % self.board_size] != env.N:
                 expected_output[i] = 0
@@ -79,20 +93,58 @@ class mc_robot:
                 else:
                     next_place.append((i, current_output[i].item()))
 
-        next_place = sorted(next_place, key=lambda x: x[1], reverse=True)
+        #         # check if some place that someone will win!
+        #         # tips: when change env.board directly, env.check don't return env.draw_play
+        #         # if self can win in this?
+        #         place_r, place_c = i // self.board_size, i % self.board_size
+        #         env.board[place_r][place_c] = who
+        #         done = env.check((place_r, place_c))
+        #         if done != 0:
+        #             win_place.add(i)
+        #         # if other can win?
+        #         env.board[place_r][place_c] = env.A if who == env.B else env.B
+        #         done = env.check((place_r, place_c))
+        #         if done != 0:
+        #             other_win_place.add(i)
+        #         env.board[place_r][place_c] = env.N
+        #
+        # # these places are thought to be the best place.
+        # if len(win_place) != 0:
+        #     for i in win_place:
+        #         expected_output[i] = 1
+        #
+        #     self.train_action(current_state, expected_output)
+        #
+        #     return 19528, 0, 19528
+        #
+        # # these places must be chosen.
+        # if len(other_win_place) > 1:
+        #     for i in range(len(current_state)):
+        #         if env.board[i // self.board_size][i % self.board_size] == env.N:
+        #             if i not in other_win_place:
+        #                 expected_output[i] = 0
+        #             elif expected_output[i] == 0:
+        #                 expected_output[i] = 0.5
+        #
+        #     self.train_action(current_state, expected_output)
+        #     if len(other_win_place) > 1:
+        #         return 0, 19528, 19528
 
+        next_place = sorted(next_place, key=lambda x: x[1], reverse=True)
         if len(next_place) > self.search_node_number:
             next_place = next_place[:self.big_select_number] + \
                          random.sample(
                              next_place[len(next_place) - self.small_random_select_number:],
                              self.small_random_select_number
                          )
+
         win_leave_cnt, loss_leave_cnt, leave_cnt = 0, 0, 0
         for i, _ in next_place:
             place_r, place_c = i // self.board_size, i % self.board_size
             env.board[place_r][place_c] = who
             done = env.check((place_r, place_c))
             if done != 0:
+                # the game is over
                 leave_cnt += 1
                 if done == env.draw_play:
                     expected_output[i] = 1 if self.draw_play_is_win else 0
@@ -116,6 +168,8 @@ class mc_robot:
 
                 if sub_node_leave_cnt == 0:
                     # draw
+                    leave_cnt += 1
+                    win_leave_cnt += 1 if self.draw_play_is_win else 0
                     expected_output[i] = 1 if self.draw_play_is_win else 0
                 else:
                     expected_output[i] = \

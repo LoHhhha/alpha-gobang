@@ -2,3 +2,5 @@
 /*.pth
 */__pycache__
 /params/
+/__pycache__
+*/*/__pycache__

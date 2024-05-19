@@ -1,24 +1,27 @@
 # -*- coding: UTF-8 -*- 
 # Creator：LeK
 # Date：2024/5/13
+import tkinter
 import pygame
 from tkinter import messagebox
+from tkinter import filedialog
 import sys
 import torch
 import agent
 import environment
 from gobang_train import robot_step
+import datetime
 
 GRID_SIZE = 3  # 棋盘格子数
 WIN_SIZE = 3  # 胜利数
-HUMAN_COLOR = 2  # 执棋颜色 黑1 白2 黑子先手
-MODULE_PATH = "alpha_gobang_B3_W3_20240518180208_mcts_ue.pth"  # when MODULE_PATH is None, play with gobang_dm
+HUMAN_COLOR = 1  # 执棋颜色 黑1 白2 黑子先手
+MODULE_PATH = None  # when MODULE_PATH is None, play with gobang_dm
 
 OPTION = 0  # 游玩 0 demo演示 1
-DEMO_PATH = './demo.txt'
 
 CELL_SIZE = 40  # 单元格大小
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
+IS_SAVE = True  # 是否记录步骤到回放文件中
 
 
 class GobangGame:
@@ -26,6 +29,11 @@ class GobangGame:
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.grid_length = grid_size * cell_size
+        self.demo_path = None
+        self.turn = 1
+        if IS_SAVE:
+            self.demo_save_path = (f'./alpha_gobang_demo_B{GRID_SIZE}_W{WIN_SIZE}_'
+                                   f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.txt')
         self.env = environment.gobang.game(board_size=GRID_SIZE, win_size=WIN_SIZE)
         self.player_human = self.env.A if HUMAN_COLOR == 1 else self.env.B
         self.player_robot = self.env.A if HUMAN_COLOR == 2 else self.env.B
@@ -63,42 +71,61 @@ class GobangGame:
                     self.draw_piece(row, col)
         pygame.display.flip()
 
+    def save_step(self, row, col):
+        if IS_SAVE:
+            with open(self.demo_save_path, 'a') as f:
+                f.write(str(row) + ',' + str(col) + '\n')
+
+    def save_winner(self, winner):
+        if IS_SAVE:
+            with open(self.demo_save_path, 'a') as f:
+                f.write(winner)
+
+    def save_robot_step(self):
+        state = self.env.get_state(self.player_robot)
+        action = self.robot.get_action(state)
+        place_hash = torch.argmax(action).item()
+        self.save_step(place_hash // GRID_SIZE, place_hash % GRID_SIZE)
+
     # 落子
     def place_piece(self, row, col):
         with torch.no_grad():
             self.env.step(self.player_human, (row, col))
             self.display()
-
+            self.save_step(row, col)
             done = self.env.check()
 
             # computer can place
             if done == 0:
+                self.save_robot_step()
                 done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
                                   board_size=GRID_SIZE)
-
             if done == 0:
                 pass
             if done == self.player_robot:
                 self.display()
                 print("Computer wins!")
+                self.save_winner('Computer')
                 messagebox.showinfo(title="游戏结束", message="Computer wins!")
                 self.is_pause = True
             elif done == self.player_human:
                 self.display()
                 print("You win!")
+                self.save_winner('You')
                 messagebox.showinfo(title="游戏结束", message="You win!")
                 self.is_pause = True
             elif done == self.env.draw_play:
                 self.display()
                 print("Draw!")
+                self.save_winner('Nobody')
                 messagebox.showinfo(title="游戏结束", message="Draw!")
                 self.is_pause = True
-
             self.display()
 
     def run(self):
         if OPTION == 0:
             if HUMAN_COLOR == 2:
+                self.save_robot_step()
                 robot_step(self.env.A, self.robot, self.env, is_train=False, show_result=True, board_size=GRID_SIZE)
             self.display()
             while True:
@@ -114,10 +141,33 @@ class GobangGame:
                         if 0 <= row < self.grid_size and 0 <= col < self.grid_size and self.env.board[row][col] == 0:
                             self.place_piece(row, col)
         else:
-            # TODO:输入序列
-            with open(DEMO_PATH, 'r') as f:
-                for line in f:
-                    pass
+            self.display()
+            window = tkinter.Tk()
+            window.withdraw()
+            self.demo_path = filedialog.askopenfilename(title='选择回放文件')
+            window.destroy()
+            with open(self.demo_path, 'r') as f:
+                idx = 0
+                lines = [line.strip() for line in f]
+                valid_lines = [line for line in lines if ',' in line]
+                winner = next((line for line in lines if ',' not in line), None)
+                row, col = zip(*(map(int, line.split(',')) for line in valid_lines))
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if self.is_pause:
+                        continue
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        self.env.board[row[idx]][col[idx]] = 1 if self.turn == 1 else -1
+                        self.turn = 1 if self.turn == 2 else 2
+                        self.display()
+                        idx += 1
+                        if idx == len(row):
+                            print(winner + " wins!")
+                            messagebox.showinfo(title="游戏结束", message=winner + " wins!")
+                            self.is_pause = True
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import torch
 import agent
 import environment
 from gobang_train import robot_step
+import gobang_l_train
 
 GRID_SIZE = 8  # 棋盘格子数
 WIN_SIZE = 5  # 胜利数
@@ -20,6 +21,7 @@ DEMO_PATH = './demo.txt'
 CELL_SIZE = 40  # 单元格大小
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
 
+VERSION="ONLY_SELF_PLAY"
 
 class GobangGame:
     def __init__(self, grid_size=GRID_SIZE, cell_size=CELL_SIZE):
@@ -73,8 +75,12 @@ class GobangGame:
 
             # computer can place
             if done == 0:
-                done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
-                                  board_size=GRID_SIZE)
+                if VERSION=="ONLY_SELF_PLAY":
+                    done=gobang_l_train.robot_step(self.player_robot,self.env,board_size=GRID_SIZE)
+                else :
+                    done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
+                              board_size=GRID_SIZE)
+
 
             if done == 0:
                 pass

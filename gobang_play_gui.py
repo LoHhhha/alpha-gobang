@@ -17,8 +17,8 @@ from gobang_train import robot_step
 GRID_SIZE = 3  # 棋盘格子数
 WIN_SIZE = 3  # 胜利数
 HUMAN_COLOR = 1  # 执棋颜色 黑1 白2 黑子先手
-MODULE_SELECT = 0  # 0 is q-learning or mcts, 1 is only_win_and_loss, 2 is dm
-MODULE_PATH = "alpha_gobang_B3_W3_20240518115748_mcts_ue.pth"  # when MODULE_PATH is None, only can be gobang_dm
+MODULE_SELECT = 2  # 0 is q-learning or mcts, 1 is only_win_and_loss, 2 is dm
+MODULE_PATH = None  # when MODULE_PATH is None, only can be gobang_dm
 
 OPTION = 0  # 游玩 0 demo演示 1
 

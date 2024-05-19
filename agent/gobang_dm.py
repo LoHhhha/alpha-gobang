@@ -5,7 +5,7 @@ import torch
 import environment.gobang
 
 
-class dm_robot():
+class dm_robot:
     def __init__(self, color, env: environment.gobang.game, display_reward: bool = False):
         self.env = env
         self.board_size = env.board_size
@@ -13,7 +13,7 @@ class dm_robot():
         self.color = color
         self.display_reward = display_reward
 
-    def get_action(self, state):
+    def get_action(self, state, show_result=False):
 
         qu = queue.Queue()
         best_score = float('-inf')
@@ -40,7 +40,7 @@ class dm_robot():
             if self.display_reward:
                 print()
 
-        save_p = 1
+        save_p = 1.0
         best_chose = -1
         while not qu.empty():
             if random.random() <= save_p:

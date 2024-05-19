@@ -10,19 +10,20 @@ import torch
 import agent
 import environment
 from gobang_train import robot_step
-import datetime
+
+import gobang_l_train
 
 GRID_SIZE = 3  # 棋盘格子数
 WIN_SIZE = 3  # 胜利数
 HUMAN_COLOR = 1  # 执棋颜色 黑1 白2 黑子先手
-MODULE_PATH = None  # when MODULE_PATH is None, play with gobang_dm
+MODULE_SELECT = 1   # 0 is q-learning or mcts, 1 is only_win_and_loss, 2 is dm
+MODULE_PATH = None  # when MODULE_PATH is None, only can be gobang_dm
 
 OPTION = 0  # 游玩 0 demo演示 1
 
 CELL_SIZE = 40  # 单元格大小
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
 IS_SAVE = True  # 是否记录步骤到回放文件中
-
 
 class GobangGame:
     def __init__(self, grid_size=GRID_SIZE, cell_size=CELL_SIZE):
@@ -37,7 +38,7 @@ class GobangGame:
         self.env = environment.gobang.game(board_size=GRID_SIZE, win_size=WIN_SIZE)
         self.player_human = self.env.A if HUMAN_COLOR == 1 else self.env.B
         self.player_robot = self.env.A if HUMAN_COLOR == 2 else self.env.B
-        if MODULE_PATH is None:
+        if MODULE_SELECT == 2:
             self.robot = agent.gobang_dm.dm_robot(self.player_robot, self.env, display_reward=False)
         else:
             self.robot = agent.gobang.robot(module_save_path=MODULE_PATH, epsilon=0, board_size=GRID_SIZE)
@@ -97,9 +98,13 @@ class GobangGame:
 
             # computer can place
             if done == 0:
-                self.save_robot_step()
-                done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
-                                  board_size=GRID_SIZE)
+                if MODULE_SELECT==1:
+                    done=gobang_l_train.robot_step(self.player_robot,self.env,board_size=GRID_SIZE)
+                else :
+                    done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
+                              board_size=GRID_SIZE)
+
+
             if done == 0:
                 pass
             if done == self.player_robot:

@@ -9,21 +9,23 @@ import sys
 import torch
 import agent
 import environment
-from gobang_train import robot_step
+import datetime
 
-import gobang_l_train
+from agent.module.L_Net_v2 import L_Net
+from gobang_train import robot_step
 
 GRID_SIZE = 3  # 棋盘格子数
 WIN_SIZE = 3  # 胜利数
 HUMAN_COLOR = 1  # 执棋颜色 黑1 白2 黑子先手
-MODULE_SELECT = 1   # 0 is q-learning or mcts, 1 is only_win_and_loss, 2 is dm
-MODULE_PATH = None  # when MODULE_PATH is None, only can be gobang_dm
+MODULE_SELECT = 0  # 0 is q-learning or mcts, 1 is only_win_and_loss, 2 is dm
+MODULE_PATH = "alpha_gobang_B3_W3_20240518115748_mcts_ue.pth"  # when MODULE_PATH is None, only can be gobang_dm
 
 OPTION = 0  # 游玩 0 demo演示 1
 
 CELL_SIZE = 40  # 单元格大小
 BOARD_COLOR = (255, 206, 158)  # 棋盘底色
 IS_SAVE = True  # 是否记录步骤到回放文件中
+
 
 class GobangGame:
     def __init__(self, grid_size=GRID_SIZE, cell_size=CELL_SIZE):
@@ -40,9 +42,15 @@ class GobangGame:
         self.player_robot = self.env.A if HUMAN_COLOR == 2 else self.env.B
         if MODULE_SELECT == 2:
             self.robot = agent.gobang_dm.dm_robot(self.player_robot, self.env, display_reward=False)
-        else:
-            self.robot = agent.gobang.robot(module_save_path=MODULE_PATH, epsilon=0, board_size=GRID_SIZE)
+        elif MODULE_SELECT == 1:
+            module = L_Net(board_size=GRID_SIZE)
+            module.load_state_dict(torch.load(MODULE_PATH))
+            self.robot = agent.gobang.robot(module=module,
+                                            epsilon=0, board_size=GRID_SIZE)
             self.robot.module.eval()
+        else:
+            self.robot = agent.gobang.robot(module_save_path=MODULE_PATH,
+                                            epsilon=0, board_size=GRID_SIZE)
         self.is_pause = False
         self.screen = pygame.display.set_mode((self.grid_length, self.grid_length))
         pygame.display.set_caption("Alpha Gobang Game")
@@ -98,12 +106,8 @@ class GobangGame:
 
             # computer can place
             if done == 0:
-                if MODULE_SELECT==1:
-                    done=gobang_l_train.robot_step(self.player_robot,self.env,board_size=GRID_SIZE)
-                else :
-                    done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
-                              board_size=GRID_SIZE)
-
+                done = robot_step(self.player_robot, self.robot, self.env, is_train=False, show_result=True,
+                                  board_size=GRID_SIZE)
 
             if done == 0:
                 pass

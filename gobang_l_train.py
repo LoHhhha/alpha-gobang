@@ -13,7 +13,6 @@ from torch.utils.data import DataLoader
 import agent
 import environment
 from agent.module.L_Net_v2 import L_Net
-from torchvision import transforms
 
 from data.data import MyDataset
 import matplotlib.pyplot as plt
@@ -209,7 +208,7 @@ def train():
     env = environment.gobang.game(board_size=BOARD_SIZE, win_size=WIN_SIZE)
 
     dm_robotB = agent.gobang_dm.dm_robot(env.B, env, display_reward=False)
-    random_robotB = agent.gobang_randon.randon_robot(env.B, env, display_reward=False)
+    random_robotB = agent.gobang_random.random_robot(env.B, env, display_reward=False)
 
     avg_time = 0
     for epoch in range(TRAIN_TIME):
